@@ -181,13 +181,24 @@ A site makes its actions **executable** by AI agents by adding an `endpoint` to 
 
 **Request** (`POST`, `Content-Type: application/json`)
 ```json
-{ "lawp_version": "0.2", "action": "book", "input": "Saturday 2pm, skin fade", "request_id": "5b1c…" }
+{ "lawp_version": "0.2", "action": "book", "input": "Saturday 2pm, skin fade", "request_id": "5b1c…", "test": false }
 ```
 Headers: `X-LAWP-Action: book`, `X-Actuent-Request-Id: <uuid>`, `User-Agent: Actuent/1.0 (+https://actuent.ai)`.
 For `GET` endpoints, `input` is sent as the `?input=` query parameter.
 
 **Response**
 Return a 2xx status for success and a short JSON body the agent can relay to the user, e.g. `{ "status": "booked", "confirmation": "AB-1234", "time": "Sat 14:00" }`. Return a 4xx with `{ "error": "..." }` when the input can't be used, so the agent can ask the user for what's missing.
+
+**Signatures**
+Actuent signs every action request with Ed25519:
+- Headers: `X-Actuent-Timestamp` (unix seconds), `X-Actuent-Key-Id`, `X-Actuent-Signature: v1=<base64url signature>`
+- Signed string: `<timestamp>\n<METHOD>\n<full request URL>\n<sha256 hex of the raw body>` (empty body for `GET`)
+- Public keys (JWKS): `https://agents.actuent.ai/.well-known/actuent-signing-keys.json`. Pick the key whose `kid` matches `X-Actuent-Key-Id`.
+
+Verify the signature and reject timestamps more than 5 minutes old before performing an action.
+
+**Test mode**
+Requests with `"test": true` in the body (or `?test=true` for `GET`, plus the `X-LAWP-Test: true` header) are test requests, for example from the LAWP Checker on docs.actuent.ai. Validate the input and respond normally, but don't perform the action.
 
 Treat these endpoints like any public API: validate input and rate limit. Agents are expected to confirm with their user before executing.
 
