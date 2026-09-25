@@ -1,6 +1,6 @@
 # LAWP — Locali AI Web Protocol
 
-**Version:** 0.1.0
+**Version:** 0.3.0
 **Status:** Active
 **Maintained by:** [localilabs](https://localilabs.com)
 
@@ -77,10 +77,44 @@ A LAWP document is a clean, structured JSON representation of a website — ever
 | `name` | `string` | ✅ | Human-readable action name |
 | `description` | `string` | ✅ | What this action does, in plain English |
 | `intent` | `string[]` | ✅ | Keywords that trigger this action. Include synonyms and related terms. Minimum 3. |
-| `input.type` | `"text" \| "number" \| "none"` | ✅ | Type of input the action accepts |
+| `input.type` | `"text" \| "number" \| "none" \| "object"` | ✅ | Type of input the action accepts. `"object"` means named fields (see [Structured inputs](#structured-inputs-v03)) |
 | `input.required` | `boolean` | ✅ | Whether input must be provided to execute the action |
+| `input.fields` | `Field[]` | with `"object"` | The named fields the action takes |
 | `endpoint.url` | `string` | — | HTTPS URL that performs the action. Only honoured in a site's own `/.well-known/lawp.json` (see [Action endpoints](#action-endpoints)) |
 | `endpoint.method` | `"POST" \| "GET"` | — | Defaults to `POST` |
+
+### Structured inputs (v0.3)
+
+Free text like "Saturday 2pm, skin fade" works, but the site then has to understand it. With `"type": "object"` an action lists the exact fields it needs, and agents send them as an object:
+
+```json
+"input": {
+  "type": "object",
+  "required": true,
+  "fields": [
+    { "name": "date", "type": "date", "required": true, "description": "Day of the appointment" },
+    { "name": "time", "type": "time", "required": true, "description": "Start time, 24-hour" },
+    { "name": "service", "type": "enum", "options": ["Haircut", "Skin fade", "Beard trim"] },
+    { "name": "name", "type": "string", "required": true },
+    { "name": "email", "type": "email", "required": true }
+  ]
+}
+```
+
+| Field property | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | `string` | ✅ | snake_case, unique within the action |
+| `type` | see below | — | Defaults to `"string"` |
+| `required` | `boolean` | — | Defaults to `false` |
+| `description` | `string` | — | What to ask the user for |
+| `options` | `string[]` | with `"enum"` | The allowed values |
+| `example` | any | — | An example value |
+
+Field types: `string`, `number`, `integer`, `boolean`, `date` (`2026-10-03`), `time` (`14:00`), `datetime` (ISO 8601 with offset), `email`, `phone`, `url`, `enum`.
+
+Agents should ask the user for any missing required field before executing. Actuent validates the input before calling the endpoint (and returns the problems, so the agent can ask again), and shows each action's input as JSON Schema in `actuent_get_actions`. Endpoints must still validate everything themselves.
+
+At most 30 fields per action.
 
 ---
 
@@ -181,10 +215,11 @@ A site makes its actions **executable** by AI agents by adding an `endpoint` to 
 
 **Request** (`POST`, `Content-Type: application/json`)
 ```json
-{ "lawp_version": "0.2", "action": "book", "input": "Saturday 2pm, skin fade", "request_id": "5b1c…", "test": false }
+{ "lawp_version": "0.3", "action": "book", "input": { "date": "2026-10-03", "time": "14:00", "service": "Skin fade", "name": "Sam", "email": "sam@example.com" }, "request_id": "5b1c…", "test": false }
 ```
+`input` is a string or number for `text`/`number` actions, an object for `object` actions (validated and normalised: enum values use the site's spelling, times are `HH:MM`), and `null` when there's none.
 Headers: `X-LAWP-Action: book`, `X-Actuent-Request-Id: <uuid>`, `User-Agent: Actuent/1.0 (+https://actuent.ai)`.
-For `GET` endpoints, `input` is sent as the `?input=` query parameter.
+For `GET` endpoints, `input` is sent as the `?input=` query parameter (JSON for objects), and each field of an object input is also sent as its own query parameter.
 
 **Response**
 Return a 2xx status for success and a short JSON body the agent can relay to the user, e.g. `{ "status": "booked", "confirmation": "AB-1234", "time": "Sat 14:00" }`. Return a 4xx with `{ "error": "..." }` when the input can't be used, so the agent can ask the user for what's missing.
@@ -240,7 +275,13 @@ await register({ apiKey: "your-key", site: { /* LAWP object */ } })
 
 ## Versioning
 
-LAWP follows semantic versioning. The current version is `0.2.0` (adds action endpoints).
+LAWP follows semantic versioning. The current version is `0.3.0`.
+
+- `0.3.0` adds structured inputs (`input.type: "object"` with `fields`).
+- `0.2.0` added action endpoints, signed requests and test mode.
+- `0.1.0` was the first version.
+
+Every version is backwards compatible: a `0.1` document is a valid `0.3` document.
 
 Breaking changes will increment the major version. The `version` field may be added to future LAWP documents.
 

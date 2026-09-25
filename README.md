@@ -80,6 +80,7 @@ LAWP gives every website a machine-readable layer that AI agents can use nativel
 - `text` — accepts a text string
 - `number` — accepts a number
 - `none` — no input required
+- `object` — named fields like `date`, `time` and `email` (v0.3; see [Structured inputs](LAWP.md#structured-inputs-v03))
 
 ## Design principles
 
