@@ -155,3 +155,7 @@ Sites that natively support LAWP can serve their LAWP at `/.well-known/lawp.json
 ## License
 
 MIT — LAWP is an open protocol. Anyone can implement it.
+
+## Action endpoints (v0.2)
+
+Sites can make their actions executable by AI agents by adding an `endpoint` to each action in their own `/.well-known/lawp.json`. See [LAWP.md → Action endpoints](LAWP.md#action-endpoints).

@@ -79,6 +79,8 @@ A LAWP document is a clean, structured JSON representation of a website — ever
 | `intent` | `string[]` | ✅ | Keywords that trigger this action. Include synonyms and related terms. Minimum 3. |
 | `input.type` | `"text" \| "number" \| "none"` | ✅ | Type of input the action accepts |
 | `input.required` | `boolean` | ✅ | Whether input must be provided to execute the action |
+| `endpoint.url` | `string` | — | HTTPS URL that performs the action. Only honoured in a site's own `/.well-known/lawp.json` (see [Action endpoints](#action-endpoints)) |
+| `endpoint.method` | `"POST" \| "GET"` | — | Defaults to `POST` |
 
 ---
 
@@ -157,6 +159,40 @@ Returns a valid LAWP document.
 
 ---
 
+## Action endpoints
+
+A site makes its actions **executable** by AI agents by adding an `endpoint` to them in its own `/.well-known/lawp.json`. Agents (for example through Actuent's `actuent_execute_action` tool) then call the endpoint directly instead of sending the user to the website.
+
+```json
+{
+  "id": "book",
+  "name": "Book appointment",
+  "description": "Book a haircut at Abdi's Barber",
+  "intent": ["book", "appointment", "haircut", "barber"],
+  "input": { "type": "text", "required": true },
+  "endpoint": { "url": "https://abdisbarber.com/api/lawp/book", "method": "POST" }
+}
+```
+
+**Rules**
+- Endpoints are only trusted when served from the site's own `https://<domain>/.well-known/lawp.json`, because only the site's owner can publish a file there. Endpoints in crawled or registered LAWP are ignored.
+- `endpoint.url` must be `https://` and on the site's own domain or a subdomain of it.
+- Redirects are not followed. Respond within 10 seconds.
+
+**Request** (`POST`, `Content-Type: application/json`)
+```json
+{ "lawp_version": "0.2", "action": "book", "input": "Saturday 2pm, skin fade", "request_id": "5b1c…" }
+```
+Headers: `X-LAWP-Action: book`, `X-Actuent-Request-Id: <uuid>`, `User-Agent: Actuent/1.0 (+https://actuent.ai)`.
+For `GET` endpoints, `input` is sent as the `?input=` query parameter.
+
+**Response**
+Return a 2xx status for success and a short JSON body the agent can relay to the user, e.g. `{ "status": "booked", "confirmation": "AB-1234", "time": "Sat 14:00" }`. Return a 4xx with `{ "error": "..." }` when the input can't be used, so the agent can ask the user for what's missing.
+
+Treat these endpoints like any public API: validate input and rate limit. Agents are expected to confirm with their user before executing.
+
+---
+
 ## Using LAWP via Actuent
 
 Actuent is the reference implementation of LAWP — a search engine that indexes the web as LAWP and serves it to AI agents.
@@ -193,7 +229,7 @@ await register({ apiKey: "your-key", site: { /* LAWP object */ } })
 
 ## Versioning
 
-LAWP follows semantic versioning. The current version is `0.1.0`.
+LAWP follows semantic versioning. The current version is `0.2.0` (adds action endpoints).
 
 Breaking changes will increment the major version. The `version` field may be added to future LAWP documents.
 
