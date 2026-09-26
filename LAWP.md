@@ -82,6 +82,7 @@ A LAWP document is a clean, structured JSON representation of a website — ever
 | `input.fields` | `Field[]` | with `"object"` | The named fields the action takes |
 | `endpoint.url` | `string` | — | HTTPS URL that performs the action. Only honoured in a site's own `/.well-known/lawp.json` (see [Action endpoints](#action-endpoints)) |
 | `endpoint.method` | `"POST" \| "GET"` | — | Defaults to `POST` |
+| `url` | `string` | — | Where a person can do this action themselves (e.g. a booking page, which may be on a booking provider). Agents can hand it to the user when the action isn't executable |
 
 ### Structured inputs (v0.3)
 
