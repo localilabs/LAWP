@@ -1,0 +1,10 @@
+{
+  "name": "lawp",
+  "version": "0.4.0",
+  "private": true,
+  "description": "LAWP (Locali AI Web Protocol) specification, JSON Schema and conformance tests",
+  "type": "module",
+  "scripts": { "test": "node tests/run.mjs" },
+  "devDependencies": { "ajv": "^8.17.1", "ajv-formats": "^3.0.1" },
+  "license": "MIT"
+}

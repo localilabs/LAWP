@@ -1,0 +1,36 @@
+{
+  "domain": "abdisbarber.com",
+  "name": "Abdi's Barber",
+  "pages": {
+    "/": {
+      "title": "Abdi's Barber",
+      "content": "Barbershop in Amsterdam."
+    }
+  },
+  "actions": [
+    {
+      "id": "contact",
+      "name": "Contact",
+      "description": "Send a message",
+      "intent": [
+        "contact",
+        "message",
+        "email"
+      ],
+      "input": {
+        "type": "text",
+        "required": true
+      }
+    }
+  ],
+  "translations": {
+    "nl": {
+      "actions": {
+        "book": {
+          "name": "Boeken"
+        }
+      }
+    }
+  },
+  "$comment": "Must fail (rules)"
+}

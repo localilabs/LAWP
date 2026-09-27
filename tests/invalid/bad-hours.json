@@ -1,0 +1,38 @@
+{
+  "domain": "abdisbarber.com",
+  "name": "Abdi's Barber",
+  "pages": {
+    "/": {
+      "title": "Abdi's Barber",
+      "content": "Barbershop in Amsterdam."
+    }
+  },
+  "actions": [
+    {
+      "id": "contact",
+      "name": "Contact",
+      "description": "Send a message",
+      "intent": [
+        "contact",
+        "message",
+        "email"
+      ],
+      "input": {
+        "type": "text",
+        "required": true
+      }
+    }
+  ],
+  "business": {
+    "opening_hours": [
+      {
+        "days": [
+          "Monday"
+        ],
+        "opens": "9am",
+        "closes": "17:00"
+      }
+    ]
+  },
+  "$comment": "Must fail (schema)"
+}

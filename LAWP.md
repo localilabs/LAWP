@@ -1,6 +1,6 @@
 # LAWP — Locali AI Web Protocol
 
-**Version:** 0.3.0
+**Version:** 0.4.0
 **Status:** Active
 **Maintained by:** [localilabs](https://localilabs.com)
 
@@ -35,6 +35,16 @@ A LAWP document is a clean, structured JSON representation of a website — ever
 | `name` | `string` | ✅ | Human-readable site name |
 | `pages` | `object` | ✅ | Map of URL paths to page objects |
 | `actions` | `array` | ✅ | List of available actions on the site |
+| `lawp_version` | `string` | — | The LAWP version the document follows, e.g. `"0.4"` |
+| `language` | `string` | — | ISO 639-1 code of the language the text is written in. Defaults to `"en"` |
+| `updated_at` | `string` | — | When the document last changed (ISO 8601) |
+| `ttl` | `integer` | — | Seconds agents may cache the document. Defaults to 3600; between 300 and 604800 |
+| `business` | `object` | — | Address, hours, contact details and prices for a business ([Business](#business-v04)) |
+| `accounts` | `object` | — | How agents connect a user's account, for actions that need one ([User accounts](#user-accounts-v04)) |
+| `translations` | `object` | — | The same content in other languages ([Languages and large sites](#languages-and-large-sites-v04)) |
+| `more_pages` | `string[]` | — | URLs of extra page files, for sites with many pages ([Languages and large sites](#languages-and-large-sites-v04)) |
+
+A JSON Schema for LAWP documents is at [`schema/lawp.schema.json`](schema/lawp.schema.json), with conformance examples in [`tests/`](tests/).
 
 ---
 
@@ -82,6 +92,11 @@ A LAWP document is a clean, structured JSON representation of a website — ever
 | `input.fields` | `Field[]` | with `"object"` | The named fields the action takes |
 | `endpoint.url` | `string` | — | HTTPS URL that performs the action. Only honoured in a site's own `/.well-known/lawp.json` (see [Action endpoints](#action-endpoints)) |
 | `endpoint.method` | `"POST" \| "GET"` | — | Defaults to `POST` |
+| `output` | `object` | — | What a successful response contains: `{ "fields": [Field] }` ([Results and errors](#results-and-errors-v04)) |
+| `modes` | `string[]` | — | `["execute", "quote"]` when the endpoint can return a quote first ([Quotes and availability](#quotes-and-availability-v04)) |
+| `safety` | `object` | — | Whether agents must ask the user first, and why ([Safety](#safety-v04)) |
+| `account` | `"none" \| "optional" \| "required"` | — | Whether the action needs the user's own account ([User accounts](#user-accounts-v04)). Defaults to `"none"` |
+| `scopes` | `string[]` | — | Account scopes the action needs |
 | `url` | `string` | — | Where a person can do this action themselves (e.g. a booking page, which may be on a booking provider). Agents can hand it to the user when the action isn't executable |
 
 ### Structured inputs (v0.3)
@@ -116,6 +131,150 @@ Field types: `string`, `number`, `integer`, `boolean`, `date` (`2026-10-03`), `t
 Agents should ask the user for any missing required field before executing. Actuent validates the input before calling the endpoint (and returns the problems, so the agent can ask again), and shows each action's input as JSON Schema in `actuent_get_actions`. Endpoints must still validate everything themselves.
 
 At most 30 fields per action.
+
+### Business (v0.4)
+
+Businesses can describe themselves directly, instead of relying on agents to find schema.org data in their HTML.
+
+```json
+"business": {
+  "type": "HairSalon",
+  "telephone": "+31 20 123 4567",
+  "email": "hello@abdisbarber.com",
+  "price_range": "€€",
+  "address": { "street": "Westerstraat 1", "postcode": "1015 LV", "city": "Amsterdam", "country": "NL" },
+  "geo": { "lat": 52.3791, "lon": 4.8840 },
+  "opening_hours": [
+    { "days": ["Tu", "We", "Th", "Fr"], "opens": "09:00", "closes": "18:00" },
+    { "days": ["Sa"], "opens": "09:00", "closes": "16:00" }
+  ],
+  "closed_on_public_holidays": true,
+  "offers": [
+    { "name": "Skin fade", "price": 25, "currency": "EUR", "category": "Cuts", "action": "book" },
+    { "name": "Beard trim", "price": 15, "currency": "EUR", "category": "Beard", "action": "book" }
+  ]
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `type` | `string` | A [schema.org](https://schema.org/LocalBusiness) business type, e.g. `Restaurant`, `HairSalon`, `Store` |
+| `telephone`, `email` | `string` | Contact details |
+| `price_range` | `string` | e.g. `"€€"` |
+| `address` | `object` | `street`, `postcode`, `city`, `region`, `country` (ISO 3166 code) |
+| `geo` | `object` | `lat` and `lon` |
+| `opening_hours` | `object[]` | `days` (`Mo`–`Su`), `opens` and `closes` (`HH:MM`, local time; `closes` earlier than `opens` means past midnight) |
+| `closed_on_public_holidays` | `boolean` | Closed on the country's public holidays |
+| `offers` | `object[]` | Services, menu items or products: `name`, `price`, `currency`, `category`, `description`, and `action` (the id of the action that books or buys it) |
+
+### Safety (v0.4)
+
+Tells agents when they must ask the user before running an action, and why.
+
+```json
+"safety": { "requires_confirmation": true, "costs_money": { "amount": 25, "currency": "EUR" }, "reversible": true, "destructive": false }
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `requires_confirmation` | `boolean` | The agent must get the user's explicit OK before executing |
+| `costs_money` | `boolean \| object` | The action charges the user; optionally the `amount` and `currency` |
+| `reversible` | `boolean` | It can be undone (e.g. a booking can be cancelled) |
+| `destructive` | `boolean` | It deletes or changes something that can't be restored |
+
+Agents **must** ask the user before executing an action that has `requires_confirmation`, `costs_money` or `destructive` set, or that has no `safety` object at all. Sites should still treat every request as untrusted.
+
+### Results and errors (v0.4)
+
+`output.fields` describes a successful response, in the same field format as [structured inputs](#structured-inputs-v03), so agents know what to expect and what to tell the user:
+
+```json
+"output": { "fields": [
+  { "name": "confirmation", "type": "string", "description": "Booking reference" },
+  { "name": "starts_at", "type": "datetime" }
+] }
+```
+
+Errors use one format, so agents can react without reading prose. Return a 4xx or 5xx status with:
+
+```json
+{ "error": { "code": "unavailable", "message": "That time is taken. 14:30 and 15:00 are free.", "field": "time" } }
+```
+
+| Code | Status | Meaning |
+|------|--------|---------|
+| `invalid_input` | 400 | A field is wrong; `field` says which |
+| `missing_input` | 400 | A required field is missing |
+| `unavailable` | 409 | Not possible at that time or in that amount (sold out, fully booked) |
+| `not_found` | 404 | The thing the input refers to doesn't exist |
+| `needs_confirmation` | 428 | The request needs the user's confirmation first |
+| `needs_account` | 401 | The action needs the user's account ([User accounts](#user-accounts-v04)) |
+| `payment_required` | 402 | Payment is needed to continue |
+| `rate_limited` | 429 | Too many requests; send `Retry-After` |
+| `internal` | 500 | Something went wrong on the site |
+
+`{ "error": "message" }` (a plain string, as in 0.2) is still accepted.
+
+### Quotes and availability (v0.4)
+
+An action with `"modes": ["execute", "quote"]` can answer "what would this cost, and is it available?" without doing anything. The agent sends `"mode": "quote"` in the request (and the `X-LAWP-Mode: quote` header). The site responds with:
+
+```json
+{
+  "quote": { "available": true, "price": 25, "currency": "EUR", "expires_at": "2026-10-03T12:00:00Z" },
+  "options": [ { "time": "14:00" }, { "time": "14:30" }, { "time": "16:00" } ]
+}
+```
+
+`options` lists alternatives the user can choose from, as partial inputs the agent can send back with `"mode": "execute"`. Quotes are free and never change anything. Without a `mode`, a request means `execute`.
+
+### Long-running actions (v0.4)
+
+When an action can't finish within 10 seconds (for example a restaurant confirms bookings by hand), the site responds `202 Accepted`:
+
+```json
+{ "status": "pending", "status_url": "https://abdisbarber.com/api/lawp/status/AB-1234", "retry_after_seconds": 60 }
+```
+
+The agent checks `status_url` with a signed `GET` (not more often than `retry_after_seconds`), which returns `{ "status": "pending" }`, `{ "status": "completed", "result": { … } }` or `{ "status": "failed", "error": { … } }`. `status_url` must be `https://` on the site's own domain.
+
+### User accounts (v0.4)
+
+Some actions act on the user's own account: "reorder my last order", "move my booking". The document says how agents connect an account with OAuth 2.1:
+
+```json
+"accounts": {
+  "type": "oauth2",
+  "authorization_url": "https://shop.example/oauth/authorize",
+  "token_url": "https://shop.example/oauth/token",
+  "registration_url": "https://shop.example/oauth/register",
+  "scopes": { "orders:read": "See your orders", "orders:write": "Place orders for you" }
+}
+```
+
+An action with `"account": "required"` (and the `scopes` it needs) is sent with `Authorization: Bearer <the user's token>` in addition to the agent's request signature. Agents use the authorization code flow with PKCE; `registration_url` supports dynamic client registration (RFC 7591). Without a token the site responds with the `needs_account` error. `"account": "optional"` means the action works as a guest and does more when signed in.
+
+### Languages and large sites (v0.4)
+
+Write the main document in one language (`language`, English recommended) and add others under `translations`, keyed by ISO 639-1 code:
+
+```json
+"translations": {
+  "nl": {
+    "name": "Abdi's Kapper",
+    "pages": { "/": { "title": "Abdi's Kapper — Amsterdam", "content": "Kapper in de Jordaan…" } },
+    "actions": { "book": { "name": "Afspraak maken", "description": "Maak een afspraak bij Abdi's Kapper", "intent": ["afspraak", "boeken", "knippen"] } }
+  }
+}
+```
+
+Sites with many pages list extra files in `more_pages`. Each is `{ "pages": { … } }`, served as JSON on the site's own domain, without redirects:
+
+```json
+"more_pages": ["https://shop.example/.well-known/lawp/pages-1.json", "https://shop.example/.well-known/lawp/pages-2.json"]
+```
+
+Keep each file under 1 MB; agents read at most 50. Use `updated_at` and `ttl` so agents know how long to cache.
 
 ---
 
@@ -187,10 +346,18 @@ Use `nike.com`, not `https://nike.com`. Protocols are inferred.
 
 ## Native LAWP support
 
-Sites can declare their own LAWP at `/.well-known/lawp.json`. This is checked before crawling and gives sites full control over their AI-readable representation.
-GET https://yourdomain.com/.well-known/lawp.json
+Sites can declare their own LAWP. It is checked before crawling and gives sites full control over their AI-readable representation.
 
-Returns a valid LAWP document.
+### Discovery (v0.4)
+
+Agents look for a site's LAWP in this order and use the first valid one:
+
+1. `https://<domain>/.well-known/lawp.json`
+2. An HTTP `Link` header on the homepage: `Link: <https://…/lawp.json>; rel="lawp"`
+3. A link in the homepage's `<head>`: `<link rel="lawp" type="application/json" href="https://…/lawp.json">`
+4. A line in `/robots.txt`: `LAWP: https://…/lawp.json`
+
+Options 2–4 are for sites that can't serve files at `/.well-known/` (Shopify, Squarespace, Wix, Webflow and similar): upload the file anywhere, for example to the platform's file storage, and point to it from the homepage. Because the site's own homepage or robots.txt vouches for the file, it may be on another host; its `domain` must still match the site, and action endpoints must still be on the site's own domain. Files are fetched without following redirects.
 
 ---
 
@@ -210,23 +377,35 @@ A site makes its actions **executable** by AI agents by adding an `endpoint` to 
 ```
 
 **Rules**
-- Endpoints are only trusted when served from the site's own `https://<domain>/.well-known/lawp.json`, because only the site's owner can publish a file there. Endpoints in crawled or registered LAWP are ignored.
+- Endpoints are only trusted in the site's own LAWP ([discovered](#discovery-v04) from its `/.well-known/lawp.json`, homepage or robots.txt), because only the site's owner can publish those. Endpoints in crawled or registered LAWP are ignored.
 - `endpoint.url` must be `https://` and on the site's own domain or a subdomain of it.
 - Redirects are not followed. Respond within 10 seconds.
 
 **Request** (`POST`, `Content-Type: application/json`)
 ```json
-{ "lawp_version": "0.3", "action": "book", "input": { "date": "2026-10-03", "time": "14:00", "service": "Skin fade", "name": "Sam", "email": "sam@example.com" }, "request_id": "5b1c…", "test": false }
+{ "lawp_version": "0.4", "action": "book", "mode": "execute", "input": { "date": "2026-10-03", "time": "14:00", "service": "Skin fade", "name": "Sam", "email": "sam@example.com" }, "request_id": "5b1c…", "test": false }
 ```
 `input` is a string or number for `text`/`number` actions, an object for `object` actions (validated and normalised: enum values use the site's spelling, times are `HH:MM`), and `null` when there's none.
 Headers: `X-LAWP-Action: book`, `X-Actuent-Request-Id: <uuid>`, `User-Agent: Actuent/1.0 (+https://actuent.ai)`.
 For `GET` endpoints, `input` is sent as the `?input=` query parameter (JSON for objects), and each field of an object input is also sent as its own query parameter.
 
 **Response**
-Return a 2xx status for success and a short JSON body the agent can relay to the user, e.g. `{ "status": "booked", "confirmation": "AB-1234", "time": "Sat 14:00" }`. Return a 4xx with `{ "error": "..." }` when the input can't be used, so the agent can ask the user for what's missing.
+Return a 2xx status for success and a short JSON body the agent can relay to the user, e.g. `{ "status": "booked", "confirmation": "AB-1234", "time": "Sat 14:00" }` (describe it with [`output`](#results-and-errors-v04)). Return an [error object](#results-and-errors-v04) when the input can't be used, so the agent can ask the user for what's missing. Use `202` for [long-running actions](#long-running-actions-v04).
 
-**Signatures**
-Actuent signs every action request with Ed25519:
+**Signatures (v0.4: HTTP Message Signatures)**
+Agents sign action requests with [HTTP Message Signatures](https://www.rfc-editor.org/rfc/rfc9421) (RFC 9421), the same standard as [Web Bot Auth](https://datatracker.ietf.org/wg/webbotauth/about/), so a site can verify any agent the same way:
+
+- `Signature-Agent: "https://agents.example"`: where the agent's keys are published, at `/.well-known/http-message-signatures-directory` (a JWKS of Ed25519 keys)
+- `Content-Digest: sha-256=:<base64>:` for requests with a body (RFC 9530)
+- `Signature-Input: sig1=("@method" "@target-uri" "content-digest" "signature-agent");created=<unix>;expires=<unix>;keyid="<JWK thumbprint>";alg="ed25519";tag="lawp"` (without `"content-digest"` for `GET`)
+- `Signature: sig1=:<base64 signature>:`
+
+Verify: fetch the directory named by `Signature-Agent` (allow-list the agents you trust), pick the key whose RFC 7638 thumbprint equals `keyid`, rebuild the signature base from the listed components, verify the Ed25519 signature, check `Content-Digest` against the raw body, and reject requests past `expires` or created more than 5 minutes ago.
+
+Actuent's directory: `https://agents.actuent.ai/.well-known/http-message-signatures-directory`.
+
+**Signatures (v0.2 scheme, still sent)**
+Actuent also signs every action request with its original Ed25519 scheme:
 - Headers: `X-Actuent-Timestamp` (unix seconds), `X-Actuent-Key-Id`, `X-Actuent-Signature: v1=<base64url signature>`
 - Signed string: `<timestamp>\n<METHOD>\n<full request URL>\n<sha256 hex of the raw body>` (empty body for `GET`)
 - Public keys (JWKS): `https://agents.actuent.ai/.well-known/actuent-signing-keys.json`. Pick the key whose `kid` matches `X-Actuent-Key-Id`.
@@ -276,13 +455,14 @@ await register({ apiKey: "your-key", site: { /* LAWP object */ } })
 
 ## Versioning
 
-LAWP follows semantic versioning. The current version is `0.3.0`.
+LAWP follows semantic versioning. The current version is `0.4.0`.
 
-- `0.3.0` adds structured inputs (`input.type: "object"` with `fields`).
+- `0.4.0` adds discovery by link, header and robots.txt; business details, hours and offers; safety labels; results and standard errors; quotes; long-running actions; user accounts; translations and split files; HTTP Message Signatures; and a JSON Schema with conformance tests.
+- `0.3.0` added structured inputs (`input.type: "object"` with `fields`).
 - `0.2.0` added action endpoints, signed requests and test mode.
 - `0.1.0` was the first version.
 
-Every version is backwards compatible: a `0.1` document is a valid `0.3` document.
+Every version is backwards compatible: a `0.1` document is a valid `0.4` document.
 
 Breaking changes will increment the major version. The `version` field may be added to future LAWP documents.
 
@@ -296,4 +476,4 @@ MIT. LAWP is an open protocol. Anyone can implement it.
 
 ## Contributing
 
-Issues and PRs welcome at [github.com/localilabs/actuent-public](https://github.com/localilabs/actuent-public).
+Issues and PRs welcome at [github.com/localilabs/lawp](https://github.com/localilabs/lawp). Run the conformance tests with `npm test`.

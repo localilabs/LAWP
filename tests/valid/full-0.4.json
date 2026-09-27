@@ -1,0 +1,183 @@
+{
+  "lawp_version": "0.4",
+  "domain": "abdisbarber.com",
+  "name": "Abdi's Barber",
+  "language": "en",
+  "updated_at": "2026-09-27T10:00:00Z",
+  "ttl": 3600,
+  "pages": {
+    "/": {
+      "title": "Abdi's Barber — Amsterdam",
+      "content": "Family-run barbershop in the Jordaan since 2012."
+    },
+    "/services": {
+      "title": "Services",
+      "content": "Haircut 25 euros. Beard trim 15 euros."
+    }
+  },
+  "actions": [
+    {
+      "id": "book",
+      "name": "Book appointment",
+      "description": "Book a haircut",
+      "intent": [
+        "book",
+        "appointment",
+        "haircut"
+      ],
+      "input": {
+        "type": "object",
+        "required": true,
+        "fields": [
+          {
+            "name": "date",
+            "type": "date",
+            "required": true
+          },
+          {
+            "name": "time",
+            "type": "time",
+            "required": true
+          },
+          {
+            "name": "service",
+            "type": "enum",
+            "options": [
+              "Skin fade",
+              "Beard trim"
+            ]
+          },
+          {
+            "name": "email",
+            "type": "email",
+            "required": true
+          }
+        ]
+      },
+      "endpoint": {
+        "url": "https://abdisbarber.com/api/lawp/book",
+        "method": "POST"
+      },
+      "output": {
+        "fields": [
+          {
+            "name": "confirmation",
+            "type": "string"
+          },
+          {
+            "name": "starts_at",
+            "type": "datetime"
+          }
+        ]
+      },
+      "modes": [
+        "execute",
+        "quote"
+      ],
+      "safety": {
+        "requires_confirmation": true,
+        "costs_money": {
+          "amount": 25,
+          "currency": "EUR"
+        },
+        "reversible": true,
+        "destructive": false
+      },
+      "account": "optional",
+      "scopes": [
+        "bookings:write"
+      ]
+    },
+    {
+      "id": "order",
+      "name": "Order online",
+      "description": "Order via our delivery partner",
+      "intent": [
+        "order",
+        "delivery",
+        "takeaway"
+      ],
+      "input": {
+        "type": "none",
+        "required": false
+      },
+      "url": "https://wolt.com/en/nld/amsterdam/restaurant/abdis"
+    }
+  ],
+  "business": {
+    "type": "HairSalon",
+    "telephone": "+31 20 123 4567",
+    "email": "hello@abdisbarber.com",
+    "price_range": "€€",
+    "address": {
+      "street": "Westerstraat 1",
+      "postcode": "1015 LV",
+      "city": "Amsterdam",
+      "country": "NL"
+    },
+    "geo": {
+      "lat": 52.3791,
+      "lon": 4.884
+    },
+    "opening_hours": [
+      {
+        "days": [
+          "Tu",
+          "We",
+          "Th",
+          "Fr"
+        ],
+        "opens": "09:00",
+        "closes": "18:00"
+      },
+      {
+        "days": [
+          "Sa"
+        ],
+        "opens": "09:00",
+        "closes": "16:00"
+      }
+    ],
+    "closed_on_public_holidays": true,
+    "offers": [
+      {
+        "name": "Skin fade",
+        "price": 25,
+        "currency": "EUR",
+        "category": "Cuts",
+        "action": "book"
+      }
+    ]
+  },
+  "accounts": {
+    "type": "oauth2",
+    "authorization_url": "https://abdisbarber.com/oauth/authorize",
+    "token_url": "https://abdisbarber.com/oauth/token",
+    "scopes": {
+      "bookings:write": "Make and change your bookings"
+    }
+  },
+  "translations": {
+    "nl": {
+      "name": "Abdi's Kapper",
+      "pages": {
+        "/": {
+          "title": "Abdi's Kapper",
+          "content": "Kapper in de Jordaan."
+        }
+      },
+      "actions": {
+        "book": {
+          "name": "Afspraak maken",
+          "intent": [
+            "afspraak",
+            "boeken"
+          ]
+        }
+      }
+    }
+  },
+  "more_pages": [
+    "https://abdisbarber.com/.well-known/lawp/pages-1.json"
+  ]
+}

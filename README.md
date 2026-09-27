@@ -82,6 +82,19 @@ LAWP gives every website a machine-readable layer that AI agents can use nativel
 - `none` — no input required
 - `object` — named fields like `date`, `time` and `email` (v0.3; see [Structured inputs](LAWP.md#structured-inputs-v03))
 
+## What's new in 0.4
+
+- **Discovery** by `<link rel="lawp">`, a `Link` header or robots.txt, for platforms that can't host `/.well-known/` files
+- **Business details, hours and offers** in the document itself
+- **Safety labels** (`requires_confirmation`, `costs_money`, `reversible`, `destructive`)
+- **Results and standard errors**, **quotes** before committing, and **long-running actions**
+- **User accounts** with OAuth 2.1 for actions on the user's own account
+- **Translations** and **split files** for multilingual and large sites
+- **HTTP Message Signatures** (RFC 9421, as in Web Bot Auth) so sites verify any agent the same way
+- A **JSON Schema** ([`schema/lawp.schema.json`](schema/lawp.schema.json)) and **conformance tests** (`npm test`)
+
+Full details: [LAWP.md](LAWP.md).
+
 ## Design principles
 
 **Plain English content** — AI reads content like a human, not a parser. No HTML, no markdown, just clear prose.
