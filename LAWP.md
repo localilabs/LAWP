@@ -209,6 +209,7 @@ Errors use one format, so agents can react without reading prose. Return a 4xx o
 | `not_found` | 404 | The thing the input refers to doesn't exist |
 | `needs_confirmation` | 428 | The request needs the user's confirmation first |
 | `needs_account` | 401 | The action needs the user's account ([User accounts](#user-accounts-v04)) |
+| `invalid_signature` | 401 | The request isn't signed, or the signature doesn't verify |
 | `payment_required` | 402 | Payment is needed to continue |
 | `rate_limited` | 429 | Too many requests; send `Retry-After` |
 | `internal` | 500 | Something went wrong on the site |
