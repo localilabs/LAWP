@@ -85,10 +85,10 @@ LAWP gives every website a machine-readable layer that AI agents can use nativel
 ## Command-line tool
 
 ```bash
-npx lawp check yoursite.com          # find your LAWP (well-known, link, header or robots.txt) and validate it
-npx lawp validate lawp.json          # validate a local file against the schema and rules
-npx lawp init yoursite.com > lawp.json   # write a starter file
-npx lawp test yoursite.com book      # send a signed test request to an action endpoint
+npx @actuent/lawp check yoursite.com          # find your LAWP (well-known, link, header or robots.txt) and validate it
+npx @actuent/lawp validate lawp.json          # validate a local file against the schema and rules
+npx @actuent/lawp init yoursite.com > lawp.json   # write a starter file
+npx @actuent/lawp test yoursite.com book      # send a signed test request to an action endpoint
 ```
 
 ## What's new in 0.4

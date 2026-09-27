@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // lawp — check, validate and create LAWP files. https://github.com/localilabs/lawp
-//   npx lawp check yoursite.com          find a site's LAWP (well-known, link, header, robots) and validate it
-//   npx lawp validate lawp.json          validate a local file against the LAWP 0.4 schema and rules
-//   npx lawp init yoursite.com           write a starter lawp.json (from what Actuent knows, if anything)
-//   npx lawp test yoursite.com <action>  send a signed test request to an action endpoint (via Actuent)
+//   npx @actuent/lawp check yoursite.com          find a site's LAWP (well-known, link, header, robots) and validate it
+//   npx @actuent/lawp validate lawp.json          validate a local file against the LAWP 0.4 schema and rules
+//   npx @actuent/lawp init yoursite.com           write a starter lawp.json (from what Actuent knows, if anything)
+//   npx @actuent/lawp test yoursite.com <action>  send a signed test request to an action endpoint (via Actuent)
 
 import fs from "fs"
 import path from "path"
@@ -90,7 +90,7 @@ async function main() {
     const domain = bare(arg.replace(/^https?:\/\//, "").split("/")[0])
     console.log(`Looking for ${domain}'s LAWP…`)
     const found = await discover(domain)
-    if (!found.doc) { bad(`No LAWP found for ${domain}`); for (const t of found.tried) console.log(`  ${c(2, t)}`); console.log(`\nCreate one: npx lawp init ${domain} > lawp.json`); return 1 }
+    if (!found.doc) { bad(`No LAWP found for ${domain}`); for (const t of found.tried) console.log(`  ${c(2, t)}`); console.log(`\nCreate one: npx @actuent/lawp init ${domain} > lawp.json`); return 1 }
     ok(`Found via ${found.via}: ${found.url}`)
     if (found.doc.domain && bare(found.doc.domain) !== domain) bad(`"domain" is ${found.doc.domain}, not ${domain}`)
     return report(found.doc) ? 0 : 1
@@ -109,7 +109,7 @@ async function main() {
         .map(({ endpoint, ...a }) => ({ ...a, safety: a.safety || { requires_confirmation: true, costs_money: false, reversible: false, destructive: false } }))
     }
     process.stdout.write(JSON.stringify(doc, null, 2) + "\n")
-    console.error(c(2, `\n${site ? "Started from what Actuent knows about the site." : "Starter file."} Edit it, then publish it at https://${domain}/.well-known/lawp.json (or link it: <link rel="lawp" href="…">) and run: npx lawp check ${domain}`))
+    console.error(c(2, `\n${site ? "Started from what Actuent knows about the site." : "Starter file."} Edit it, then publish it at https://${domain}/.well-known/lawp.json (or link it: <link rel="lawp" href="…">) and run: npx @actuent/lawp check ${domain}`))
     return 0
   }
   if (cmd === "test" && arg && arg2) {
@@ -125,10 +125,10 @@ async function main() {
   }
   console.log(`lawp — tools for LAWP, the format that makes websites readable and actionable by AI agents
 
-  npx lawp check <domain>           find and validate a site's LAWP
-  npx lawp validate <file>          validate a local lawp.json
-  npx lawp init <domain> > lawp.json  write a starter file
-  npx lawp test <domain> <action>   send a signed test request to an action endpoint
+  npx @actuent/lawp check <domain>           find and validate a site's LAWP
+  npx @actuent/lawp validate <file>          validate a local lawp.json
+  npx @actuent/lawp init <domain> > lawp.json  write a starter file
+  npx @actuent/lawp test <domain> <action>   send a signed test request to an action endpoint
 
 Spec: https://github.com/localilabs/lawp · Generator: https://docs.actuent.ai/generator`)
   return cmd ? 1 : 0
