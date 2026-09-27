@@ -1,10 +1,42 @@
 {
   "name": "lawp",
   "version": "0.4.0",
-  "private": true,
-  "description": "LAWP (Locali AI Web Protocol) specification, JSON Schema and conformance tests",
+  "description": "Check, validate and create LAWP files: the format that makes websites readable and actionable by AI agents",
   "type": "module",
-  "scripts": { "test": "node tests/run.mjs" },
-  "devDependencies": { "ajv": "^8.17.1", "ajv-formats": "^3.0.1" },
-  "license": "MIT"
+  "scripts": {
+    "test": "node tests/run.mjs"
+  },
+  "license": "MIT",
+  "bin": {
+    "lawp": "cli.mjs"
+  },
+  "files": [
+    "cli.mjs",
+    "rules.mjs",
+    "schema/",
+    "LAWP.md",
+    "README.md"
+  ],
+  "keywords": [
+    "lawp",
+    "ai",
+    "agents",
+    "mcp",
+    "llm",
+    "schema",
+    "validator"
+  ],
+  "homepage": "https://github.com/localilabs/lawp",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/localilabs/lawp.git"
+  },
+  "author": "localilabs",
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
 }
