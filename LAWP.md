@@ -1,6 +1,6 @@
 # LAWP — Locali AI Web Protocol
 
-**Version:** 0.4.0
+**Version:** 0.5.0
 **Status:** Active
 **Maintained by:** [localilabs](https://localilabs.com)
 
@@ -35,7 +35,7 @@ A LAWP document is a clean, structured JSON representation of a website — ever
 | `name` | `string` | ✅ | Human-readable site name |
 | `pages` | `object` | ✅ | Map of URL paths to page objects |
 | `actions` | `array` | ✅ | List of available actions on the site |
-| `lawp_version` | `string` | — | The LAWP version the document follows, e.g. `"0.4"` |
+| `lawp_version` | `string` | — | The LAWP version the document follows, e.g. `"0.5"` |
 | `language` | `string` | — | ISO 639-1 code of the language the text is written in. Defaults to `"en"` |
 | `updated_at` | `string` | — | When the document last changed (ISO 8601) |
 | `ttl` | `integer` | — | Seconds agents may cache the document. Defaults to 3600; between 300 and 604800 |
@@ -97,6 +97,7 @@ A JSON Schema for LAWP documents is at [`schema/lawp.schema.json`](schema/lawp.s
 | `safety` | `object` | — | Whether agents must ask the user first, and why ([Safety](#safety-v04)) |
 | `account` | `"none" \| "optional" \| "required"` | — | Whether the action needs the user's own account ([User accounts](#user-accounts-v04)). Defaults to `"none"` |
 | `scopes` | `string[]` | — | Account scopes the action needs |
+| `type` | `string` | — | A standard action type, so agents know exactly what it does and which fields to ask for ([Standard action types](#standard-action-types-v05)) |
 | `url` | `string` | — | Where a person can do this action themselves (e.g. a booking page, which may be on a booking provider). Agents can hand it to the user when the action isn't executable |
 
 ### Structured inputs (v0.3)
@@ -228,6 +229,47 @@ An action with `"modes": ["execute", "quote"]` can answer "what would this cost,
 ```
 
 `options` lists alternatives the user can choose from, as partial inputs the agent can send back with `"mode": "execute"`. Quotes are free and never change anything. Without a `mode`, a request means `execute`.
+
+### Standard action types (v0.5)
+
+Most actions on the web are the same few things: booking a table, booking an appointment, checking what's free, asking for a quote. Give such an action a `type`, and every agent knows what it does and which fields it takes, without reading the description. A typed action must take named fields (`input.type: "object"`) including the ones below; it can take more.
+
+| `type` | Required fields | Notes |
+|-------|-----------------|-------|
+| `book_table` | `date` (date), `time` (time), `party_size` (integer), `name`, and `email` or `phone` | Restaurants, bars, cafés |
+| `book_appointment` | `date`, `time`, `service` (string or enum), `name`, and `email` or `phone` | Hairdressers, clinics, any appointment |
+| `check_availability` | `date` | Never changes anything. Its `output` includes `available` (boolean) |
+| `request_quote` | `description`, `name`, and `email` or `phone` | Tradespeople, catering, services priced per job |
+| `contact` | `name`, `message`, and `email` or `phone` | A message to the business |
+| `order` | `items`, `name`, and `email` or `phone` | Takeaway, click and collect |
+| `search` | `query` | Search the site |
+| `subscribe` | `email` (email) | Newsletters and updates |
+
+```json
+{
+  "id": "book_table",
+  "type": "book_table",
+  "name": "Book a table",
+  "description": "Reserve a table at Trattoria Rosa",
+  "intent": ["book", "table", "reservation", "dinner"],
+  "input": {
+    "type": "object",
+    "required": true,
+    "fields": [
+      { "name": "date", "type": "date", "required": true },
+      { "name": "time", "type": "time", "required": true },
+      { "name": "party_size", "type": "integer", "required": true },
+      { "name": "name", "required": true },
+      { "name": "phone", "type": "phone", "required": true },
+      { "name": "notes", "description": "Allergies, high chair, occasion" }
+    ]
+  },
+  "endpoint": { "url": "https://trattoria-rosa.dk/api/book" },
+  "modes": ["execute", "quote"]
+}
+```
+
+A `check_availability` action pairs well with a typed booking action: agents check first, then book one of the free times. Actions without a `type` work as before. Leave `type` out rather than stretching one that doesn't fit.
 
 ### Long-running actions (v0.4)
 
@@ -456,14 +498,15 @@ await register({ apiKey: "your-key", site: { /* LAWP object */ } })
 
 ## Versioning
 
-LAWP follows semantic versioning. The current version is `0.4.0`.
+LAWP follows semantic versioning. The current version is `0.5.0`.
 
+- `0.5.0` adds standard action types (`book_table`, `book_appointment`, `check_availability`, `request_quote`, `contact`, `order`, `search`, `subscribe`) with the fields each one takes.
 - `0.4.0` adds discovery by link, header and robots.txt; business details, hours and offers; safety labels; results and standard errors; quotes; long-running actions; user accounts; translations and split files; HTTP Message Signatures; and a JSON Schema with conformance tests.
 - `0.3.0` added structured inputs (`input.type: "object"` with `fields`).
 - `0.2.0` added action endpoints, signed requests and test mode.
 - `0.1.0` was the first version.
 
-Every version is backwards compatible: a `0.1` document is a valid `0.4` document.
+Every version is backwards compatible: a `0.1` document is a valid `0.5` document.
 
 Breaking changes will increment the major version. The `version` field may be added to future LAWP documents.
 

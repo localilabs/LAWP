@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // lawp — check, validate and create LAWP files. https://github.com/localilabs/lawp
 //   npx @actuent/lawp check yoursite.com          find a site's LAWP (well-known, link, header, robots) and validate it
-//   npx @actuent/lawp validate lawp.json          validate a local file against the LAWP 0.4 schema and rules
+//   npx @actuent/lawp validate lawp.json          validate a local file against the LAWP 0.5 schema and rules
 //   npx @actuent/lawp init yoursite.com           write a starter lawp.json (from what Actuent knows, if anything)
 //   npx @actuent/lawp test yoursite.com <action>  send a signed test request to an action endpoint (via Actuent)
 
@@ -13,7 +13,7 @@ import addFormats from "ajv-formats"
 import { lawpRules } from "./rules.mjs"
 
 const here = path.dirname(fileURLToPath(import.meta.url))
-const UA = "lawp-cli/0.4 (+https://github.com/localilabs/lawp)"
+const UA = "lawp-cli/0.5 (+https://github.com/localilabs/lawp)"
 const color = process.stdout.isTTY && !process.env.NO_COLOR
 const c = (code, s) => color ? `\x1b[${code}m${s}\x1b[0m` : s
 const ok = s => console.log(`${c(32, "✓")} ${s}`)
@@ -67,7 +67,7 @@ async function discover(domain) {
 
 function report(doc) {
   const problems = validate(doc)
-  if (problems.length) { for (const p of problems) bad(p) } else ok("Valid LAWP " + (doc.lawp_version || "(add \"lawp_version\": \"0.4\")"))
+  if (problems.length) { for (const p of problems) bad(p) } else ok("Valid LAWP " + (doc.lawp_version || "(add \"lawp_version\": \"0.5\")"))
   const actions = Array.isArray(doc.actions) ? doc.actions : []
   console.log(`  ${Object.keys(doc.pages || {}).length} pages, ${actions.length} actions${doc.business ? ", business details" : ""}`)
   for (const a of actions) {
@@ -103,7 +103,7 @@ async function main() {
       site = (data.results || []).find(r => bare(r.domain) === domain) || null
     } catch {}
     const doc = {
-      lawp_version: "0.4", domain, name: site?.name || domain, language: "en",
+      lawp_version: "0.5", domain, name: site?.name || domain, language: "en",
       pages: site?.pages && Object.keys(site.pages).length ? site.pages : { "/": { title: domain, content: "Describe what you do, where, and for whom, in plain English." } },
       actions: (site?.actions?.length ? site.actions : [{ id: "contact", name: "Contact", description: `Send a message to ${domain}`, intent: ["contact", "message", "email"], input: { type: "text", required: true } }])
         .map(({ endpoint, ...a }) => ({ ...a, safety: a.safety || { requires_confirmation: true, costs_money: false, reversible: false, destructive: false } }))

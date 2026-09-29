@@ -1,0 +1,60 @@
+{
+  "lawp_version": "0.5",
+  "domain": "trattoria-rosa.dk",
+  "name": "Trattoria Rosa",
+  "pages": {
+    "/": {
+      "title": "Trattoria Rosa",
+      "content": "Italian restaurant in Copenhagen."
+    }
+  },
+  "actions": [
+    {
+      "id": "book_table",
+      "type": "book_table",
+      "name": "Book a table",
+      "description": "Reserve a table",
+      "intent": [
+        "book",
+        "table",
+        "reservation",
+        "dinner"
+      ],
+      "input": {
+        "type": "object",
+        "required": true,
+        "fields": [
+          {
+            "name": "date",
+            "type": "date",
+            "required": true
+          },
+          {
+            "name": "time",
+            "type": "time",
+            "required": true
+          },
+          {
+            "name": "name",
+            "required": true
+          },
+          {
+            "name": "phone",
+            "type": "phone",
+            "required": true
+          },
+          {
+            "name": "notes"
+          }
+        ]
+      },
+      "endpoint": {
+        "url": "https://trattoria-rosa.dk/api/book"
+      },
+      "modes": [
+        "execute",
+        "quote"
+      ]
+    }
+  ]
+}

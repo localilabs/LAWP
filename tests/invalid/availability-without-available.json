@@ -1,0 +1,43 @@
+{
+  "lawp_version": "0.5",
+  "domain": "trattoria-rosa.dk",
+  "name": "Trattoria Rosa",
+  "pages": {
+    "/": {
+      "title": "Trattoria Rosa",
+      "content": "Italian restaurant in Copenhagen."
+    }
+  },
+  "actions": [
+    {
+      "id": "availability",
+      "type": "check_availability",
+      "name": "Check availability",
+      "description": "Is there a table free?",
+      "intent": [
+        "available",
+        "free table",
+        "tonight"
+      ],
+      "input": {
+        "type": "object",
+        "required": true,
+        "fields": [
+          {
+            "name": "date",
+            "type": "date",
+            "required": true
+          },
+          {
+            "name": "time",
+            "type": "time"
+          },
+          {
+            "name": "party_size",
+            "type": "integer"
+          }
+        ]
+      }
+    }
+  ]
+}

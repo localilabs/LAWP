@@ -91,6 +91,10 @@ npx @actuent/lawp init yoursite.com > lawp.json   # write a starter file
 npx @actuent/lawp test yoursite.com book      # send a signed test request to an action endpoint
 ```
 
+## What's new in 0.5
+
+- **Standard action types**: `book_table`, `book_appointment`, `check_availability`, `request_quote`, `contact`, `order`, `search` and `subscribe`, each with the fields it takes, so every agent knows what an action does and what to ask the user. See [Standard action types](LAWP.md#standard-action-types-v05).
+
 ## What's new in 0.4
 
 - **Discovery** by `<link rel="lawp">`, a `Link` header or robots.txt, for platforms that can't host `/.well-known/` files

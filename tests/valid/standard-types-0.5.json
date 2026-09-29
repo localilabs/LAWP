@@ -1,0 +1,141 @@
+{
+  "lawp_version": "0.5",
+  "domain": "trattoria-rosa.dk",
+  "name": "Trattoria Rosa",
+  "pages": {
+    "/": {
+      "title": "Trattoria Rosa",
+      "content": "Italian restaurant in Copenhagen."
+    }
+  },
+  "actions": [
+    {
+      "id": "book_table",
+      "type": "book_table",
+      "name": "Book a table",
+      "description": "Reserve a table",
+      "intent": [
+        "book",
+        "table",
+        "reservation",
+        "dinner"
+      ],
+      "input": {
+        "type": "object",
+        "required": true,
+        "fields": [
+          {
+            "name": "date",
+            "type": "date",
+            "required": true
+          },
+          {
+            "name": "time",
+            "type": "time",
+            "required": true
+          },
+          {
+            "name": "party_size",
+            "type": "integer",
+            "required": true
+          },
+          {
+            "name": "name",
+            "required": true
+          },
+          {
+            "name": "phone",
+            "type": "phone",
+            "required": true
+          },
+          {
+            "name": "notes"
+          }
+        ]
+      },
+      "endpoint": {
+        "url": "https://trattoria-rosa.dk/api/book"
+      },
+      "modes": [
+        "execute",
+        "quote"
+      ]
+    },
+    {
+      "id": "availability",
+      "type": "check_availability",
+      "name": "Check availability",
+      "description": "Is there a table free?",
+      "intent": [
+        "available",
+        "free table",
+        "tonight"
+      ],
+      "input": {
+        "type": "object",
+        "required": true,
+        "fields": [
+          {
+            "name": "date",
+            "type": "date",
+            "required": true
+          },
+          {
+            "name": "time",
+            "type": "time"
+          },
+          {
+            "name": "party_size",
+            "type": "integer"
+          }
+        ]
+      },
+      "output": {
+        "fields": [
+          {
+            "name": "available",
+            "type": "boolean"
+          },
+          {
+            "name": "times",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "id": "quote",
+      "type": "request_quote",
+      "name": "Ask for a catering quote",
+      "description": "Catering for events",
+      "intent": [
+        "catering",
+        "quote",
+        "event"
+      ],
+      "input": {
+        "type": "object",
+        "required": true,
+        "fields": [
+          {
+            "name": "description",
+            "required": true
+          },
+          {
+            "name": "name",
+            "required": true
+          },
+          {
+            "name": "email",
+            "type": "email",
+            "required": true
+          },
+          {
+            "name": "budget",
+            "type": "number"
+          }
+        ]
+      }
+    }
+  ]
+}
