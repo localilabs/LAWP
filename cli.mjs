@@ -11,6 +11,7 @@ import { fileURLToPath } from "url"
 import Ajv from "ajv/dist/2020.js"
 import addFormats from "ajv-formats"
 import { lawpRules } from "./rules.mjs"
+import { lawpyAnimate, lawpySay } from "./lawpy.mjs"
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const UA = "lawp-cli/0.5 (+https://github.com/localilabs/lawp)"
@@ -65,6 +66,12 @@ async function discover(domain) {
   return { tried }
 }
 
+// Lawpy (Actuent's mascot) reacts: a dance for a valid file, thinking when there's something to fix.
+// Only in a real terminal; plain output in CI and logs, or with NO_COLOR.
+async function lawpyVerdict(valid, problems) {
+  await lawpyAnimate(valid ? "dance" : "think", valid ? ["Valid! AI agents can read it."] : [`${problems} thing${problems === 1 ? "" : "s"} to fix, listed above.`], valid ? 2 : 1)
+}
+
 function report(doc) {
   const problems = validate(doc)
   if (problems.length) { for (const p of problems) bad(p) } else ok("Valid LAWP " + (doc.lawp_version || "(add \"lawp_version\": \"0.5\")"))
@@ -76,6 +83,7 @@ function report(doc) {
     if (a.endpoint && !a.safety) warn(`    ${a.id}: add "safety" so agents know when to ask the user first`)
     if (a.endpoint && !a.output) warn(`    ${a.id}: add "output.fields" to describe the response`)
   }
+  report.problems = problems.length
   return problems.length === 0
 }
 
@@ -84,7 +92,10 @@ const [cmd, arg, arg2] = process.argv.slice(2)
 async function main() {
   if (cmd === "validate" && arg) {
     const doc = JSON.parse(fs.readFileSync(arg, "utf8"))
-    return report(doc) ? 0 : 1
+    const valid = report(doc)
+    console.log("")
+    await lawpyVerdict(valid, report.problems)
+    return valid ? 0 : 1
   }
   if (cmd === "check" && arg) {
     const domain = bare(arg.replace(/^https?:\/\//, "").split("/")[0])
@@ -93,7 +104,10 @@ async function main() {
     if (!found.doc) { bad(`No LAWP found for ${domain}`); for (const t of found.tried) console.log(`  ${c(2, t)}`); console.log(`\nCreate one: npx @actuent/lawp init ${domain} > lawp.json`); return 1 }
     ok(`Found via ${found.via}: ${found.url}`)
     if (found.doc.domain && bare(found.doc.domain) !== domain) bad(`"domain" is ${found.doc.domain}, not ${domain}`)
-    return report(found.doc) ? 0 : 1
+    const valid = report(found.doc)
+    console.log("")
+    await lawpyVerdict(valid, report.problems)
+    return valid ? 0 : 1
   }
   if (cmd === "init" && arg) {
     const domain = bare(arg.replace(/^https?:\/\//, "").split("/")[0])
@@ -109,6 +123,8 @@ async function main() {
         .map(({ endpoint, ...a }) => ({ ...a, safety: a.safety || { requires_confirmation: true, costs_money: false, reversible: false, destructive: false } }))
     }
     process.stdout.write(JSON.stringify(doc, null, 2) + "\n")
+    // On stderr, so he never ends up inside the file when output goes to lawp.json.
+    await lawpyAnimate("wave", ["Here's your starter lawp.json!"], 2, process.stderr)
     console.error(c(2, `\n${site ? "Started from what Actuent knows about the site." : "Starter file."} Edit it, then publish it at https://${domain}/.well-known/lawp.json (or link it: <link rel="lawp" href="…">) and run: npx @actuent/lawp check ${domain}`))
     return 0
   }
@@ -123,7 +139,9 @@ async function main() {
     console.log(JSON.stringify(res.response ?? res, null, 2))
     return res.executed ? 0 : 1
   }
-  console.log(`lawp — tools for LAWP, the format that makes websites readable and actionable by AI agents
+  lawpySay("idle", ["Hi, I'm Lawpy.", "lawp: tools for LAWP files"])
+  console.log(`
+lawp — tools for LAWP, the format that makes websites readable and actionable by AI agents
 
   npx @actuent/lawp check <domain>           find and validate a site's LAWP
   npx @actuent/lawp validate <file>          validate a local lawp.json

@@ -1,6 +1,6 @@
 {
   "name": "@actuent/lawp",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Check, validate and create LAWP files: the format that makes websites readable and actionable by AI agents",
   "type": "module",
   "scripts": {
@@ -15,7 +15,8 @@
     "rules.mjs",
     "schema/",
     "LAWP.md",
-    "README.md"
+    "README.md",
+    "lawpy.mjs"
   ],
   "keywords": [
     "lawp",
