@@ -1,3 +1,5 @@
+<p align="center"><img src="https://api.actuent.ai/assets/lawpy/lawpy-dance.gif" width="108" height="72" alt="Lawpy, the Actuent mascot, dancing"></p>
+
 # LAWP — Locali AI Web Protocol
 
 LAWP is an open protocol for representing websites in a structured format that AI agents can read, understand, and act on.
