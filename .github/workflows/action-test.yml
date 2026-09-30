@@ -1,0 +1,13 @@
+name: Test the GitHub Action
+on:
+  push:
+    paths: [action.yml, tests/**]
+  workflow_dispatch:
+jobs:
+  valid:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./
+        with:
+          path: tests/valid/full-0.4.json

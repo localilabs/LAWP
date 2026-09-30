@@ -188,3 +188,22 @@ MIT — LAWP is an open protocol. Anyone can implement it.
 ## Action endpoints (v0.2)
 
 Sites can make their actions executable by AI agents by adding an `endpoint` to each action in their own `/.well-known/lawp.json`. See [LAWP.md → Action endpoints](LAWP.md#action-endpoints).
+
+## GitHub Action
+
+Check your `lawp.json` on every push. Lawpy reports back in the job summary: he dances when it's valid.
+
+```yaml
+# .github/workflows/lawp.yml
+name: LAWP
+on: [push, pull_request]
+jobs:
+  lawp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: localilabs/lawp@main
+        with:
+          path: .well-known/lawp.json   # where your file is
+          # domain: yoursite.com        # optional: also check the live site
+```

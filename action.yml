@@ -1,0 +1,44 @@
+name: LAWP Check
+description: Validate your lawp.json (LAWP, the Locali AI Web Protocol) on every push. Lawpy reports back in the job summary.
+author: localilabs
+branding:
+  icon: check-circle
+  color: orange
+inputs:
+  path:
+    description: Path to your lawp.json in the repository
+    default: .well-known/lawp.json
+  domain:
+    description: Optional. Also check the live site (finds its published LAWP the way AI agents do)
+    default: ""
+runs:
+  using: composite
+  steps:
+    - name: Validate lawp.json
+      shell: bash
+      env:
+        LAWP_PATH: ${{ inputs.path }}
+        LAWP_DOMAIN: ${{ inputs.domain }}
+      run: |
+        set +e
+        out=$(npx -y @actuent/lawp@latest validate "$LAWP_PATH" 2>&1); code=$?
+        echo "$out"
+        if [ -n "$LAWP_DOMAIN" ]; then
+          live=$(npx -y @actuent/lawp@latest check "$LAWP_DOMAIN" 2>&1); live_code=$?
+          echo "$live"
+          [ $live_code -ne 0 ] && code=1
+        fi
+        # Problems as annotations on the file.
+        echo "$out" | grep -E '^\s*(✕|x|○)' | head -20 | while read -r line; do echo "::error file=$LAWP_PATH::${line}"; done
+        {
+          if [ $code -eq 0 ]; then
+            echo '<img src="https://api.actuent.ai/assets/lawpy/lawpy-dance.gif" width="108" height="72" alt="Lawpy dancing">'
+            echo ""; echo "### ✓ Your lawp.json is valid"
+          else
+            echo '<img src="https://api.actuent.ai/assets/lawpy/lawpy-think.gif" width="108" height="72" alt="Lawpy thinking">'
+            echo ""; echo "### Your lawp.json needs a fix"
+          fi
+          echo ""; echo '```'; echo "$out"; [ -n "$LAWP_DOMAIN" ] && echo "$live"; echo '```'
+          echo ""; echo "Spec: [github.com/localilabs/lawp](https://github.com/localilabs/lawp) · Make one: [docs.actuent.ai/generator](https://docs.actuent.ai/generator)"
+        } >> "$GITHUB_STEP_SUMMARY"
+        exit $code
